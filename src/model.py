@@ -1,16 +1,27 @@
 
 def genSimpleName(obj):
-    return "%s(%s)" % (obj.__class__.__name__, str(hash(obj)))
+    return "%s(id=%s)" % (obj.__class__.__name__, str(hash(obj)))
 
 
-class Variable:
+
+class Gettable:
+    def getValue(self):
+        print("Hasn't been overwritten yet.")
+
+
+
+class Variable(Gettable):
     def __init__(self):
         pass
+
+
+
+
 
 class Scalar(Variable):
     def __init__(self):
         self.val  = None
-        self.name = "Scalar(" + str(hash(self)) + ")"
+        self.name = genSimpleName(self)
 
     def setName(self, name: str):
         self.name = str(name)
@@ -54,34 +65,76 @@ class Field(Variable):
         return "[%s]" % (self.name)
 
 
-class Operator:
-    def __init__(self):
-        pass
+class Target(Field):
+    def __init__(self, *args, **kwargs):
+        super(Target, self).__init__(*args, **kwargs)
 
 
-class UnaryOperator(Operator):
-    def __init__(self):
-        pass
+class DummyTarget(Field):
+    def __init__(self, *args, **kwargs):
+        super(DummyTarget, self).__init__(*args, **kwargs)
 
 
- 
-class BinaryOperator(Operator):
-    def __init__(self):
-        self.var1 = None
-        self.var2 = None
-        self.op_name = genSimpleName(self)
 
-    def setOpName(self, op_name: str):
-        self.op_name = op_name
+
+
+class Operator(Gettable):
+    def __init__(self, num_of_operands):
+        self.operands = [None for _ in range(num_of_operands)]
+        self.num_of_operands = num_of_operands
+
+    def setOperands(self, *args):
+
+        if len(args) > self.num_of_operands:
+            raise Exception("Too many operands.")
+
+        for i, arg in enumerate(args):
+            if(isinstance(arg, Gettable) == False):
+                raise Exception("Operand should be Gettable.")
+            self.operands[i] = arg
+
         return self
 
+    def clearOperands(self):
+        self.operands = [None for _ in range(self.num_of_operands)]
 
-    def setVars(self, var1: Variable, var2: Variable):
-        self.var1 = var1
-        self.var2 = var2
-        return self
+
+    def areOperandsAllSet(self):
+        empty_cnt = 0
+        for i, operand in enumerate(self.operands):
+            if operand is None:
+                empty_cnt += 1
         
+        return empty_cnt == 0
 
+
+class OpMinus(Operator):
+    def __init__(self):
+        super(OpMinus, self).__init__(2)
+        self.op_name = genSimpleName(self)
+        self.desc = "No Description"
+
+    def setDescription(self, desc: str):
+        self.desc = desc
+        return self
+
+
+
+
+class Wrapper:
+    def __init__(self):
+        self.target = None
+
+    def genGraph(self):
+        return None
+
+
+    def setTarget(self, target: Target):
+        if(isinstance(target, Target) == False):
+            raise Exception("Target should be subclass of Target.")
+
+        self.target = target
+        return self
 
 
 
@@ -92,9 +145,12 @@ if __name__ == "__main__":
     u  = Field().setName("U velocity") 
 
 
-    print(isinstance(nu, Scalar))
-    print(isinstance(nu, Variable))
     print(u)
 
 
-    mul_op = BinaryOperator().setVars(nu, u)
+    mul_op = OpMinus().setOperands(nu, u)
+    mul_op.getValue()
+
+    zeta = Target()
+
+    wrap = Wrapper().setTarget(zeta)

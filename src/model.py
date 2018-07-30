@@ -203,24 +203,24 @@ class Wrapper:
 
 
 
-    def detectCircular(self, obj, key):
+    def detectCircular(self, prev_tnode, this_tnode, key):
         
-        for link in obj.getLinks():
-            tnode = link.getTNode()
-            if tnode is None:
-                raise Exception("Node [%s] has empty links." % (str(obj),))
+        for link in this_tnode.getLinks():
+            next_tnode = link.getTNode()
+            if next_tnode is None:
+                raise Exception("Node [%s] has empty links." % (str(this_tnode),))
             
             if link.getChecked() == key:
-                raise Exception("Circular direction detected at node [%s]" % (str(obj),))
+                raise Exception("Circular direction detected at node [%s]" % (str(prev_tnode),))
 
             link.setChecked(key)
-            self.detectCircular(tnode, key)
+            self.detectCircular(this_tnode, next_tnode, key)
 
 
     def check(self):
         key = random.getrandbits(128)
-        print("key = " + str(key))
-        self.detectCircular(self.target, key)
+        #print("key = " + str(key))
+        self.detectCircular(None, self.target, key)
         print("Checking successful")
         
 
@@ -255,13 +255,16 @@ if __name__ == "__main__":
     mu = Scalar().setName("mu").setValue(6e-3)
     u  = Field().setName("U") 
 
+    min_op = OpMinus()
     add_op = OpAdd()
 
     mul_op = OpMul().setOperands(nu, add_op)
 
-    add_op.setOperands(mu, u)
+    add_op.setOperands(mu, min_op)
+
 
     zeta_t = Target().setName("zeta_t").setEqual(mul_op)
+    min_op.setOperands(u, nu)
     wrap = Wrapper().setTarget(zeta_t)
     wrap.check()
    
